@@ -9,7 +9,7 @@ from utils import get_image_bytes, DisplayReader
 app = FastAPI()
 reader = DisplayReader()
 
-VIDEO_PATH = "/Users/aida/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
+VIDEO_PATH = "C:/Users/user/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
 
 origins = [
     "http://localhost:3000",
@@ -43,70 +43,83 @@ async def send_frame(websocket: WebSocket, frame_type: int, frame):
     await websocket.send_bytes(image_bytes)
 
 
+async def command_listener(websocket: WebSocket, state):
+    while True:
+        data = await websocket.receive_text()
+        if data == "start":
+            state["is_streaming"] = True
+        elif data == "stop":
+            state["is_streaming"] = False
+
+            if state["cap"] is not None:
+                state["cap"].release()
+                state["cap"]  = None
+            await websocket.send_text(
+                json.dumps(
+                    {"type":"status", "message":"video_stopped"}
+                )
+            )
+        else:
+            await websocket.send_text(
+                json.dumps(
+                    {"type":"echo", "message":f"Unknown command {data}"}
+                )
+            )
+
+async def stream_video(websocket: WebSocket, state):
+    while True:
+        if not state["is_streaming"]:
+            await asyncio.sleep(0.05)
+            continue
+        if state["cap"] is None or not state["cap"].isOpened():
+            state["cap"] = cv2.VideoCapture(VIDEO_PATH)
+
+            if not state["cap"].isOpened():
+                await websocket.send_text(
+                    json.dumps(
+                        {"type":"status", "message": "Cannot open the video"}
+                    )
+                ) 
+                state["is_streaming"] = False
+                await asyncio.sleep(0.5)
+                continue
+        ok, frame = state["cap"].read()
+        if not ok:
+            await websocket.send_text(
+                json.dumps(
+                    {"type":"status", "message": "Video is finished"}
+                )
+            )
+            state["cap"].release()
+            state["cap"] = None
+            state["is_streaming"] = False
+            continue
+        reader.displayReader(frame)
+        await send_frame(websocket, 1, reader.getPureImage())
+        await send_frame(websocket, 2, reader.getCannyImage())
+        await send_frame(websocket, 3, reader.getImageContours())
+        if reader.getMarkedDisplayImage() is not None:
+            await websocket.send_text(
+                json.dumps(
+                    {"type": "displayStatus", "message":"true"}
+                )
+            )
+            await send_frame(websocket, 4, reader.getMarkedDisplayImage())
+        else: 
+            await websocket.send_text(
+                json.dumps(
+                    {"type":"displayStatus", "message":"false"}
+                )
+            )
+        await asyncio.sleep(0.03)
+
 @app.websocket("/ws")
 async def websocket_connection(websocket: WebSocket):
     await websocket.accept()
-    cap = None
+    state = {"is_streaming": False, "cap":None}
 
     try:
-        while True:
-            data = await websocket.receive_text()
-
-            if data == "start":
-                if cap is None or not cap.isOpened():
-                    cap = cv2.VideoCapture(VIDEO_PATH)
-
-                if not cap.isOpened():
-                    await websocket.send_text(
-                        json.dumps(
-                            {"type": "error", "message": "Cannot open video file"}
-                        )
-                    )
-                    continue
-
-                while True:
-                    ok, frame = cap.read()
-
-                    if not ok:
-                        await websocket.send_text(
-                            json.dumps(
-                                {"type": "status", "message": "video_finished"}
-                            )
-                        )
-                        break
-
-                    reader.displayReader(frame)
-
-                    await send_frame(websocket, 1, reader.getPureImage())
-                    await send_frame(websocket, 2, reader.getCannyImage())
-                    await send_frame(websocket, 3, reader.getImageContours())
-                    if (reader.getMarkedDisplayImage() is not None):
-                        await send_frame(websocket, 4, reader.getMarkedDisplayImage())
-
-                    # Небольшая пауза, чтобы не забить websocket и CPU
-                    await asyncio.sleep(0.03)
-
-            elif data == "restart":
-                if cap is not None:
-                    cap.release()
-                cap = cv2.VideoCapture(VIDEO_PATH)
-                await websocket.send_text(
-                    json.dumps({"type": "status", "message": "video_restarted"})
-                )
-
-            elif data == "stop":
-                if cap is not None:
-                    cap.release()
-                    cap = None
-                await websocket.send_text(
-                    json.dumps({"type": "status", "message": "video_stopped"})
-                )
-
-            else:
-                await websocket.send_text(
-                    json.dumps({"type": "echo", "message": f"Unknown command: {data}"})
-                )
-
+       await asyncio.gather(command_listener(websocket, state), stream_video(websocket, state))
     except WebSocketDisconnect:
         print("Client disconnected")
 
@@ -114,5 +127,5 @@ async def websocket_connection(websocket: WebSocket):
         print("WebSocket error:", e)
 
     finally:
-        if cap is not None:
-            cap.release()
+        if state["cap"] is not None:
+            state["cap"].release()

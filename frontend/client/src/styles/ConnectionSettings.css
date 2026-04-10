@@ -1,56 +1,89 @@
-.main-container{
-  padding-top: 20px;
+.main-container {
+  padding: 20px;
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-}
-.connection-btn {
-  padding: 10px 20px;
-  font-size: 15px;
-  cursor: pointer;
-  border: 0;
-  background-color: rgb(238, 147, 67);
-  color: white;
-  box-shadow: 3px 3px 0px rgb(124, 71, 25);
-}
-.connection-settings-container {
-  width: auto;
-  display: flex;
-  gap: 10px;
-  padding-left: 10px;
-  align-items: center;
-}
-.connection-status-open {
-  background-color: rgb(126, 212, 41);
-  color: white;
-  padding: 10px;
-  box-shadow: 3px 3px 0px rgb(90, 155, 25);
-}
-.connection-status-close {
-  background-color: rgb(212, 41, 41);
-  color: white;
-  padding: 10px;
-  box-shadow: 3px 3px 0px rgb(103, 13, 13);
+  box-sizing: border-box;
 }
 
+.connection-settings-container {
+  display: flex;
+  width: min(1100px, 90%);
+  gap: 10px;
+  border-radius: 12px;
+  padding: 20px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  background-color: rgb(13, 17, 32);
+}
+
+.connection-btn,
 .translation-btn {
   padding: 10px 20px;
   font-size: 15px;
   cursor: pointer;
   border: 0;
-  background-color: rgb(67, 130, 238);
   color: white;
+  border-radius: 8px;
+}
+
+.connection-btn {
+  background-color: rgb(238, 147, 67);
+  box-shadow: 3px 3px 0px rgb(124, 71, 25);
+}
+
+.translation-btn {
+  background-color: rgb(67, 130, 238);
   box-shadow: 3px 3px 0px rgb(49, 68, 191);
 }
-.canvas-container{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 10px;
+
+.connection-status-open {
+  background-color: rgb(126, 212, 41);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0px rgb(90, 155, 25);
 }
-.canvas{
+
+.connection-status-close {
+  background-color: rgb(212, 41, 41);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0px rgb(103, 13, 13);
+}
+
+.canvas-container {
+  width: min(1100px, 90%);
+  background-color: rgb(13, 17, 32);
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.canvas {
+  width: 100%;
+  height: 250px;
+  background: #0f172a;
+  border-radius: 10px;
   box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.361);
+  cursor: pointer;
+}
+
+.huge-canvas {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: black;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
