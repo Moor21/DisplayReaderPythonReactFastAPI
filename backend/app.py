@@ -9,7 +9,7 @@ from utils import get_image_bytes, DisplayReader
 app = FastAPI()
 reader = DisplayReader()
 
-VIDEO_PATH = "C:/Users/user/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
+VIDEO_PATH = "/Users/aida/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
 
 origins = [
     "http://localhost:3000",

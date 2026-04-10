@@ -19,6 +19,7 @@
   align-items: center;
   flex-wrap: wrap;
   background-color: rgb(13, 17, 32);
+  color: white;
 }
 
 .connection-btn,
@@ -29,6 +30,8 @@
   border: 0;
   color: white;
   border-radius: 8px;
+  background-color: rgb(67, 130, 238);
+  box-shadow: 3px 3px 0px rgb(49, 68, 191);
 }
 
 .connection-btn {
@@ -36,10 +39,7 @@
   box-shadow: 3px 3px 0px rgb(124, 71, 25);
 }
 
-.translation-btn {
-  background-color: rgb(67, 130, 238);
-  box-shadow: 3px 3px 0px rgb(49, 68, 191);
-}
+
 
 .connection-status-open {
   background-color: rgb(126, 212, 41);
