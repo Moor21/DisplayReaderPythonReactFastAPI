@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from schema import Parameters
 import cv2
 import asyncio
 import json
@@ -9,7 +10,7 @@ from utils import get_image_bytes, DisplayReader
 app = FastAPI()
 reader = DisplayReader()
 
-VIDEO_PATH = "/Users/aida/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
+VIDEO_PATH = "C:/Users/user/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
 
 origins = [
     "http://localhost:3000",
@@ -42,6 +43,12 @@ async def send_frame(websocket: WebSocket, frame_type: int, frame):
 
     await websocket.send_bytes(image_bytes)
 
+
+
+@app.post("/parameters/send")
+def parameters_send(parameters: Parameters):
+    reader.parameters_changing(parameters)
+    return parameters
 
 async def command_listener(websocket: WebSocket, state):
     while True:

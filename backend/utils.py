@@ -26,10 +26,29 @@ class DisplayReader:
         self.image_contours = None
         self.marked_display = None
         self.proc = ImageProcessing()
+        self.minThresh = 80
+        self.maxThresh = 100
+        self.blur_kernel = (5,5)
+        self.morph_kernel = (7,7)
+        self.xFactor = 0.07
+        self.yFactor = 0.25
+
+    def parameters_changing(self, parameters):
+        print("Parameters: ", parameters)
+        print("Old_parameters: ", self.minThresh, " ", self.maxThresh, " ", self.blur_kernel, " ", self.morph_kernel, " ", self.xFactor, " ", self.yFactor)
+        self.minThresh = parameters.minThresh
+        self.maxThresh = parameters.maxThresh
+        if parameters.blur_kernel != 0:
+            self.blur_kernel = (parameters.blur_kernel, parameters.blur_kernel)
+        if parameters.morph_kernel != 0:
+            self.morph_kernel =(parameters.morph_kernel,parameters.morph_kernel)
+        self.xFactor = parameters.xFactor
+        self.yFactor = parameters.yFactor
+        print("New_parameters: ", self.minThresh, " ", self.maxThresh, " ", self.blur_kernel, " ", self.morph_kernel, " ", self.xFactor, " ", self.yFactor)
 
     def displayReader(self, image):
         self.pure_image = image
-        canny = self.proc.getCannyImage(image, (5,5),80,100,(7,7))
+        canny = self.proc.getCannyImage(image, self.morph_kernel,self.minThresh,self.maxThresh,self.morph_kernel)
         self.canny_image = canny
         contours=self.proc.getContours(canny)
         img_contours = self.proc.getContoursImage(image,contours, (255,0,0));

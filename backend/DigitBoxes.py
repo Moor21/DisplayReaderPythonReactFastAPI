@@ -24,10 +24,10 @@ class DigitBoxes:
             "C": (0, 0, 1, 1, 1, 0, 1),
         }
 
-    def loadPureImage(self, pure_display_image):
+    def loadPureImage(self, pure_display_image, xFactor, yFactor):
         pureCroppedDisplay = pure_display_image.copy()
-        thresh_height = int(pure_display_image.shape[0] * 0.25)
-        thresh_width = int(pure_display_image.shape[1] * 0.07)
+        thresh_height = int(pure_display_image.shape[0] * yFactor)
+        thresh_width = int(pure_display_image.shape[1] * xFactor)
 
         h, w = pureCroppedDisplay.shape[:2]
         y1 = max(0, thresh_height)

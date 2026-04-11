@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import "../styles/ConnectionSettings.css";
 import InformationPanel from "./InformationPanel";
+import LogsContainer from "./LogsContainer";
+import {  useLogsContext } from "../contexts/LogsContext";
 function ConnectionSettings() {
   const [websocket, setWebsocket] = useState(null);
   const [connection, setConnection] = useState("connecting");
+  ///------Logs-----///
+  const {logs, addLog} = useLogsContext();
+  
   ///------DisplayStatus and NumbersFromDisplay------///
   const [numbersFromDisplay, setNumbersFromDisplay] = useState(null);
   const [displayFoundStatus, setDisplayFoundStatus] = useState(null);
@@ -81,6 +86,7 @@ function ConnectionSettings() {
     if(!websocket)return;
     websocket.onopen = ()=>{
       setConnection("Connected");
+      addLog("Connected");
     }
     websocket.onmessage = async (event) => {
       if (event.data instanceof ArrayBuffer) {
@@ -133,6 +139,7 @@ function ConnectionSettings() {
       }else{ 
         const parsed_data = JSON.parse(event.data);
         console.log(parsed_data);
+        addLog(event.data);
         if(parsed_data.type == "displayStatus"){
           if (parsed_data.message == "false"){
           console.log("False");
@@ -145,6 +152,7 @@ function ConnectionSettings() {
     };
     websocket.onclose = () => {
       setConnection("Disconnected");
+      addLog("Disconnected");
   }
   }, [websocket])
  
@@ -206,6 +214,7 @@ function ConnectionSettings() {
         ></canvas>
       </div>
       <InformationPanel numbersFromDisplay = {numbersFromDisplay} displayStatus={displayFoundStatus}/>
+      <LogsContainer />
     </div>
   );
 }
