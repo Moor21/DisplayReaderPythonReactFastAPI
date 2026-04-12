@@ -1,5 +1,6 @@
 import cv2
 from ImageProcessing import ImageProcessing
+from DigitBoxes import DigitBoxes
 def get_image_bytes(img, image_type):
     frame_type = 1
     if image_type == 1:
@@ -32,6 +33,7 @@ class DisplayReader:
         self.morph_kernel = (7,7)
         self.xFactor = 0.07
         self.yFactor = 0.25
+        self.whole_digit = None
 
     def parameters_changing(self, parameters):
         print("Parameters: ", parameters)
@@ -54,8 +56,14 @@ class DisplayReader:
         img_contours = self.proc.getContoursImage(image,contours, (255,0,0));
         self.image_contours = img_contours
         marked_display = self.proc.findDisplayContour(image, contours)
+        self.marked_display = marked_display
         if marked_display is not None:
-            self.marked_display = marked_display
+            box = DigitBoxes(self.marked_display,self.proc)
+            box.loadPureImage(self.marked_display, self.xFactor, self.yFactor)
+            thresholdedDisplay = box.getDisplayThresholdImage()
+            self.marked_display = thresholdedDisplay
+            self.whole_digit = box.getWholeDigitString(thresholdedDisplay)
+
         
       
     def getPureImage(self):

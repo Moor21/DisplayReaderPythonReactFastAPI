@@ -147,6 +147,8 @@ function ConnectionSettings() {
           }else if(parsed_data.message == "true"){
           setDisplayFoundStatus(true);
           }
+        }else if(parsed_data.type=="whole_digit"){
+          setNumbersFromDisplay(Number(parsed_data.message));
         }
       }
     };

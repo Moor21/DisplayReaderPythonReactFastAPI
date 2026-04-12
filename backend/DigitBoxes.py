@@ -57,7 +57,6 @@ class DigitBoxes:
         if y2 > y1 and x2 > x1:
             thresholdDisplay = thresholdDisplay[y1:y2, x1:x2]
 
-        cv2.imshow("Thresholded display", thresholdDisplay)
         return thresholdDisplay
 
     def specialSymbolAnalys(self, binary, grouped):
@@ -190,7 +189,7 @@ class DigitBoxes:
         spec_sym = self.specialSymbolAnalys(binary, grouped)
         print("Spec_sym: ", spec_sym)
         whole_digit = None
-        if spec_sym == "U":
+        if spec_sym == "P":
             digit_groups = grouped[1:] if len(grouped) > 1 else []
             print("Digit_groups: ", digit_groups)
             whole_digit = self.digitBoxAnalys(binary, digit_groups)
@@ -425,5 +424,4 @@ class DigitBoxes:
                 if segment_tuple[0] == 1 and segment_tuple[1] == 1:
                     whole_digit += "1"
 
-        cv2.imshow("segments", segment_rectangles)
         return whole_digit

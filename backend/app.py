@@ -11,7 +11,7 @@ app = FastAPI()
 reader = DisplayReader()
 
 VIDEO_PATH = "C:/Users/user/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/output.mp4"
-
+IMAGE_PATH= "/Users/aida/Documents/GitHub/DisplayReaderPythonReactFastAPI/images/display.jpg"
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -78,30 +78,50 @@ async def stream_video(websocket: WebSocket, state):
         if not state["is_streaming"]:
             await asyncio.sleep(0.05)
             continue
-        if state["cap"] is None or not state["cap"].isOpened():
-            state["cap"] = cv2.VideoCapture(VIDEO_PATH)
+        #-------VideoCapture-------#
+        # if state["cap"] is None or not state["cap"].isOpened():
+        #     state["cap"] = cv2.VideoCapture(VIDEO_PATH)
 
-            if not state["cap"].isOpened():
-                await websocket.send_text(
-                    json.dumps(
-                        {"type":"status", "message": "Cannot open the video"}
-                    )
-                ) 
+        #------Image------#
+        if state["img"] is None:
+            state["img"] = cv2.imread(IMAGE_PATH);
+
+        #------VideoCapture-----#
+            # if not state["cap"].isOpened():
+            #     await websocket.send_text(
+            #         json.dumps(
+            #             {"type":"status", "message": "Cannot open the video"}
+            #         )
+            #     ) 
+            #     state["is_streaming"] = False
+            #     await asyncio.sleep(0.5)
+            #     continue
+
+            #-----Image------#
+            if state["img"] is None:
+                await websocket.send_text(json.dumps({
+                    "type":"status","message":"Cannot open the Image" 
+                }))
                 state["is_streaming"] = False
                 await asyncio.sleep(0.5)
                 continue
-        ok, frame = state["cap"].read()
-        if not ok:
-            await websocket.send_text(
-                json.dumps(
-                    {"type":"status", "message": "Video is finished"}
-                )
-            )
-            state["cap"].release()
-            state["cap"] = None
-            state["is_streaming"] = False
-            continue
-        reader.displayReader(frame)
+            
+        #-----VideoCapture----#    
+        # ok, frame = state["cap"].read()
+        # if not ok:
+        #     await websocket.send_text(
+        #         json.dumps(
+        #             {"type":"status", "message": "Video is finished"}
+        #         )
+        #     )
+        #     state["cap"].release()
+        #     state["cap"] = None
+        #     state["is_streaming"] = False
+        #     continue
+        #     reader.displayReader(frame)
+
+        #------Image--------#
+        reader.displayReader(state["img"])
         await send_frame(websocket, 1, reader.getPureImage())
         await send_frame(websocket, 2, reader.getCannyImage())
         await send_frame(websocket, 3, reader.getImageContours())
@@ -111,28 +131,36 @@ async def stream_video(websocket: WebSocket, state):
                     {"type": "displayStatus", "message":"true"}
                 )
             )
+            await websocket.send_text(
+                json.dumps(
+                    {"type": "whole_digit", "message": reader.whole_digit}
+                )
+            )
             await send_frame(websocket, 4, reader.getMarkedDisplayImage())
-        else: 
+        elif(reader.getMarkedDisplayImage() is None): 
             await websocket.send_text(
                 json.dumps(
                     {"type":"displayStatus", "message":"false"}
                 )
             )
+        #----Image-----#
+        state["is_streaming"] = False    
         await asyncio.sleep(0.03)
 
 @app.websocket("/ws")
 async def websocket_connection(websocket: WebSocket):
     await websocket.accept()
     state = {"is_streaming": False, "cap":None}
-
+    state_image = {"is_streaming" : False, "img": None}
     try:
-       await asyncio.gather(command_listener(websocket, state), stream_video(websocket, state))
+       await asyncio.gather(command_listener(websocket, state_image), stream_video(websocket, state_image))
     except WebSocketDisconnect:
         print("Client disconnected")
 
     except Exception as e:
         print("WebSocket error:", e)
 
-    finally:
-        if state["cap"] is not None:
-            state["cap"].release()
+    # finally:
+        #------VideoCapture------#
+        # if state["cap"] is not None:
+        #     state["cap"].release()
