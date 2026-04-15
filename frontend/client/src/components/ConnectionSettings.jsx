@@ -7,7 +7,7 @@ function ConnectionSettings() {
   const [websocket, setWebsocket] = useState(null);
   const [connection, setConnection] = useState("connecting");
   ///------Logs-----///
-  const {logs, addLog} = useLogsContext();
+  const {logs, addLog, results, addRes} = useLogsContext();
   
   ///------DisplayStatus and NumbersFromDisplay------///
   const [numbersFromDisplay, setNumbersFromDisplay] = useState(null);
@@ -19,8 +19,21 @@ function ConnectionSettings() {
   const cannyImageCanvasRef = useRef(null);
   const imageContoursCanvasRef = useRef(null);
   const markedImageCanvasRef = useRef(null);
-  
-  
+  ///------Last Blobs Refs-----////
+  const pureImageLastBlobRef = useRef(null);
+  const cannyImageLastBlobRef = useRef(null);
+  const imageContoursLastBlobRef = useRef(null);
+  const markedImageLastBlobRef = useRef(null);
+  const drawLastBlob = async (blob, currentCanvas)=>{
+    if(!blob || !currentCanvas) return;
+    console.log("Blob: ", blob);
+    const bitmap = await createImageBitmap(blob);
+    const canvas = currentCanvas;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0,0,canvas.width, canvas.height);
+    bitmap.close();
+  }
   ///------------CanvasClick() handler------------//////////
   const canvasClick = (name)=>{
    setCurrentClickedCanvas((prev)=>prev === name ? null : name);
@@ -28,34 +41,39 @@ function ConnectionSettings() {
     currentClickedCanvas
    )
   }
+  
   ///------------DisplayState ->console.log() --------//////
   useEffect(() => {
   console.log("displayFoundStatus changed:", displayFoundStatus);
   }, [displayFoundStatus]);
   ///---------------CanvasSize handler--------------/////
   useEffect(()=>{
-    const reset_canvas = (canvas)=>{
+    const reset_canvas = (canvas, blob)=>{
       if(!canvas)return;
       canvas.width = 400;
       canvas.height = 200;
       canvas.className = "canvas";
-    }
-    reset_canvas(pureImageCanvasRef.current);
-    reset_canvas(cannyImageCanvasRef.current);
-    reset_canvas(imageContoursCanvasRef.current);
-    reset_canvas(markedImageCanvasRef.current);
 
-    const make_huge = (canvas)=>{
+      drawLastBlob(blob, canvas);
+    }
+    reset_canvas(pureImageCanvasRef.current, pureImageLastBlobRef.current);
+    reset_canvas(cannyImageCanvasRef.current, cannyImageLastBlobRef.current);
+    reset_canvas(imageContoursCanvasRef.current, imageContoursLastBlobRef.current);
+    reset_canvas(markedImageCanvasRef.current, markedImageLastBlobRef.current);
+
+    const make_huge = (canvas, lastBlob)=>{
       if(!canvas) return;
       canvas.width = 1280;
       canvas.height = 720;
       canvas.className = "huge-canvas";
+
+      drawLastBlob(lastBlob, canvas);
     }
 
-    if(currentClickedCanvas === "pure") make_huge(pureImageCanvasRef.current);
-    if(currentClickedCanvas === "canny") make_huge(cannyImageCanvasRef.current);
-    if(currentClickedCanvas === "contours") make_huge(imageContoursCanvasRef.current);
-    if(currentClickedCanvas === "marked") make_huge(markedImageCanvasRef.current);
+    if(currentClickedCanvas === "pure") make_huge(pureImageCanvasRef.current, pureImageLastBlobRef.current);
+    if(currentClickedCanvas === "canny") make_huge(cannyImageCanvasRef.current, cannyImageLastBlobRef.current);
+    if(currentClickedCanvas === "contours") make_huge(imageContoursCanvasRef.current, imageContoursLastBlobRef.current);
+    if(currentClickedCanvas === "marked") make_huge(markedImageCanvasRef.current, markedImageLastBlobRef.current);
   },[currentClickedCanvas])
   ////------Connection handlers-----------////
   const open_connection = () => {
@@ -81,6 +99,8 @@ function ConnectionSettings() {
         websocket.send("stop");
     }
   }
+
+  
   ///----------Websocket handler------------/////
   useEffect(()=>{
     if(!websocket)return;
@@ -100,41 +120,17 @@ function ConnectionSettings() {
         console.log("ImageBytes: ", imageBytes);
 
         if(frame_type == 1){
-          const bitmap = await createImageBitmap(blob);
-          const canvas = pureImageCanvasRef.current;
-          const ctx = canvas.getContext("2d");
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-
-          bitmap.close();
+          pureImageLastBlobRef.current = blob;
+          drawLastBlob(blob, pureImageCanvasRef.current);
         }else if(frame_type == 2){
-          const bitmap = await createImageBitmap(blob);
-          const canvas = cannyImageCanvasRef.current;
-          const ctx = canvas.getContext("2d");
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-
-          bitmap.close();
+          cannyImageLastBlobRef.current = blob;
+          drawLastBlob(blob, cannyImageCanvasRef.current);
         }else if(frame_type == 3){
-          const bitmap = await createImageBitmap(blob);
-          const canvas = imageContoursCanvasRef.current;
-          const ctx = canvas.getContext("2d");
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-
-          bitmap.close();
+          imageContoursLastBlobRef.current = blob;
+          drawLastBlob(blob, imageContoursCanvasRef.current);
         }else if(frame_type == 4){
-          const bitmap = await createImageBitmap(blob);
-          const canvas = markedImageCanvasRef.current;
-          const ctx = canvas.getContext("2d");
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-
-          bitmap.close();
+          markedImageLastBlobRef.current=blob;
+          drawLastBlob(blob, markedImageCanvasRef.current);
         }
       }else{ 
         const parsed_data = JSON.parse(event.data);
@@ -148,7 +144,8 @@ function ConnectionSettings() {
           setDisplayFoundStatus(true);
           }
         }else if(parsed_data.type=="whole_digit"){
-          setNumbersFromDisplay(Number(parsed_data.message));
+          setNumbersFromDisplay(parsed_data.message);
+          addRes(parsed_data.message);
         }
       }
     };
@@ -158,7 +155,24 @@ function ConnectionSettings() {
   }
   }, [websocket])
  
+///------EventHandler-------////
+  useEffect(()=>{
+    function keyhandler(event) {
+      if(event.key === "t"){
+        if(connection === "Connected"){
+          console.log("Sended");
+          websocket.send("image");
+        }else{
+          alert(connection);
+        }
+      }
+    }
+    document.addEventListener('keydown', keyhandler );
 
+    return ()=>{
+      document.removeEventListener('keydown', keyhandler)
+    }
+  }, [connection, websocket])
   return (
     <div className="main-container">
       <div className="connection-settings-container">

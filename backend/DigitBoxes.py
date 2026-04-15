@@ -8,6 +8,7 @@ class DigitBoxes:
         self.display_image = display_image
         self.proc = proc
         self.binary_height = None
+        self.segments_image = None
         self.pureCroppedDisplay = None
         self.SEG_PATTERNS = {
             "0": (1, 1, 1, 1, 1, 1, 0),
@@ -138,6 +139,7 @@ class DigitBoxes:
         return symbol
 
     def getWholeDigitString(self, binary):
+        binary_copy = binary.copy()
         if binary is None or binary.size == 0:
             return ""
 
@@ -182,17 +184,20 @@ class DigitBoxes:
                 latest_start, latest_end = start, end
 
         grouped.append((latest_start, latest_end))
-
+        print("Grouped: ", grouped)
+        for rect in grouped:
+            cv2.rectangle(binary_copy, (rect[0], 0), (rect[1], self.binary_height), (255,255,255),3)
+        self.segments_image = binary_copy    
         if not grouped:
             return ""
 
         spec_sym = self.specialSymbolAnalys(binary, grouped)
         print("Spec_sym: ", spec_sym)
         whole_digit = None
-        if spec_sym == "P":
-            digit_groups = grouped[1:] if len(grouped) > 1 else []
-            print("Digit_groups: ", digit_groups)
-            whole_digit = self.digitBoxAnalys(binary, digit_groups)
+        #if spec_sym == "P":
+        digit_groups = grouped[1:] if len(grouped) > 1 else []
+        print("Digit_groups: ", digit_groups)
+        whole_digit = self.digitBoxAnalys(binary, digit_groups)
 
     
         return whole_digit
@@ -337,7 +342,7 @@ class DigitBoxes:
 
             digit_width = x2 - x1 + 1
             digit_height = y2 - y1
-
+            places_for_checking = []
             if digit_width <= 0 or digit_height <= 0:
                 whole_digit += "?"
                 continue
@@ -366,7 +371,7 @@ class DigitBoxes:
                     six_segment,
                     seven_segment,
                 ]
-            elif digit_width < 12:
+            elif digit_width <= 12:
                 digit_type = 1
                 one_segment = ((x1+seg_t,y1),(x2-seg_t, mid_y))
                 two_segment = ((x1+seg_t, mid_y),(x2-seg_t, y2))
@@ -375,13 +380,12 @@ class DigitBoxes:
                     one_segment,
                     two_segment
                 ]
-                
-            #-----Отрисовка place-а для проверки каждого сегмента на бинарнике----#
+                #-----Отрисовка place-а для проверки каждого сегмента на бинарнике----#
             for point in places_for_checking:
                 cv2.rectangle(segment_rectangles, point[0], point[1], (255,255,255),1)
-            #-----Проверка каждого сегмента на заполнинность - использование best_score----#
+                #-----Проверка каждого сегмента на заполнинность - использование best_score----#
             for idx, segment in enumerate(places_for_checking):
-                #-----определение углов бокса для проверки-----#
+                    #-----определение углов бокса для проверки-----#
                 (sx1, sy1), (sx2, sy2) = segment
 
                 x_left = max(0, min(sx1, sx2))
@@ -390,7 +394,6 @@ class DigitBoxes:
                 y_bottom = min(binary.shape[0], max(sy1, sy2))
 
                 fill_ratio = 0.0
-
                 if x_right > x_left and y_bottom > y_top:
                     segment_roi = binary[y_top:y_bottom, x_left:x_right]
                     segment_roi_area = segment_roi.shape[0] * segment_roi.shape[1]
@@ -399,14 +402,14 @@ class DigitBoxes:
                         fill_ratio = cv2.countNonZero(segment_roi) / segment_roi_area
 
                 segment_dict[idx] = 1 if fill_ratio > 0.3 else 0
-            #-----превращаем dict в tuple для удобного сравнения-----#
+                #-----превращаем dict в tuple для удобного сравнения-----#
             if digit_type == 0:
                 segment_tuple = tuple(segment_dict[i] for i in range(7))
             elif digit_type == 1:
                 segment_tuple = tuple(segment_dict[i] for i in range(2))
             print("Segment_tuple: ", segment_tuple)
 
-            #-----определяем число с погрешностью в один сегмент----#
+                #-----определяем число с погрешностью в один сегмент----#
             best_score = -1
             best_digit = None
             if digit_type == 0:
@@ -423,5 +426,4 @@ class DigitBoxes:
             elif digit_type == 1:
                 if segment_tuple[0] == 1 and segment_tuple[1] == 1:
                     whole_digit += "1"
-
         return whole_digit

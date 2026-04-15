@@ -61,8 +61,8 @@ class DisplayReader:
             box = DigitBoxes(self.marked_display,self.proc)
             box.loadPureImage(self.marked_display, self.xFactor, self.yFactor)
             thresholdedDisplay = box.getDisplayThresholdImage()
-            self.marked_display = thresholdedDisplay
             self.whole_digit = box.getWholeDigitString(thresholdedDisplay)
+            self.marked_display = box.segments_image
 
         
       

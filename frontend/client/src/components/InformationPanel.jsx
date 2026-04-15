@@ -46,7 +46,7 @@ function InformationPanel({ displayStatus, numbersFromDisplay }) {
             <span className="status-main-text">
               {displayStatus ? "Found" : "Not found"}
             </span>
-            <span className="status-footer-text">Searching for display...</span>
+            <span className="status-footer-text">{!displayStatus && "Searching for display..."}</span>
           </div>
           <div className="display-status-subbox">
             <span className="status-title">Numbers</span>

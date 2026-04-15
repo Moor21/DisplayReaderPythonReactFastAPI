@@ -10,6 +10,15 @@ export const useLogsContext =()=> {
 }
 export const LogsProvider = ({children})=>{
     const [logs, setLogs] = useState([]);
+    const [results, setResults] = useState([]);
+    const addRes = (res)=>{
+        const time = new Date().toLocaleTimeString("ru-RU", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        })
+        setResults((prev)=>[...prev, `${time}: ${res}`]);
+    }
     const addLog = (message)=>{
     const time = new Date().toLocaleTimeString("ru-RU", {
         hour: "2-digit",
@@ -19,7 +28,7 @@ export const LogsProvider = ({children})=>{
     setLogs((prev)=>[...prev, `${time}: ${message}`]);
     }
 
-    const value = {logs, addLog};
+    const value = {logs, addLog, results, addRes};
     return(
         <LogsContext.Provider value={value}>
             {children}
